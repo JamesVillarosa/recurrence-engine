@@ -115,14 +115,9 @@ body {
 }
 .workspace-logo {
   width: 38px; height: 38px;
+  flex: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--purple), #a78bfa);
-  color: #fff;
-  font-weight: 800;
-  font-size: 20px;
-  display: grid;
-  place-items: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.4);
 }
 .workspace-meta { display: flex; flex-direction: column; line-height: 1.2; }
 .workspace-name { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
@@ -159,7 +154,9 @@ body {
 }
 .nav-item.is-muted { color: var(--on-dark-dim); cursor: default; }
 .nav-item.is-muted:hover { background: var(--aubergine-hover); }
-.nav-ico { width: 18px; text-align: center; font-size: 14px; }
+.nav-item span { flex: none; }
+.nav-ico { width: 18px; height: 18px; flex: none; opacity: 0.92; }
+.nav-item.is-muted .nav-ico { opacity: 0.6; }
 .chip {
   margin-left: auto;
   font-size: 10px;
@@ -196,6 +193,7 @@ body {
   transition: background 0.12s;
 }
 .icon-btn:hover { background: rgba(255, 255, 255, 0.18); }
+.icon-btn svg { width: 18px; height: 18px; display: block; margin: auto; }
 
 .avatar {
   width: 34px; height: 34px;
@@ -242,6 +240,34 @@ body {
   transition: background 0.12s, color 0.12s;
 }
 .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: var(--purple);
+  border: none;
+  padding: 8px 13px 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.35);
+  transition: background 0.12s, transform 0.06s;
+}
+.btn-primary:hover { background: var(--purple-600); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-primary svg { width: 16px; height: 16px; }
+.check {
+  display: inline-grid;
+  place-items: center;
+  width: 16px; height: 16px;
+  margin-left: 6px;
+  vertical-align: -3px;
+  color: var(--done);
+}
+.check svg { width: 14px; height: 14px; }
 
 .content {
   flex: 1;

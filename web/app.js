@@ -308,6 +308,14 @@ function init() {
   initSegmented("#policy", "policy");
   initWeekdays();
   initPreviewLinks();
+  const newTask = $("#new-task");
+  if (newTask) {
+    newTask.addEventListener("click", () => {
+      const title = $("#task-title");
+      title.focus();
+      title.select();
+    });
+  }
   $$("input").forEach((input) => input.addEventListener("input", scheduleRun));
   run();
 }
