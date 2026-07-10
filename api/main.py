@@ -37,13 +37,13 @@ WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
 app = FastAPI(
-    title="Recurrence Engine API",
+    title="Cadence Scheduling API",
     version="1.0.0",
     summary="Expand recurrence rules into concrete, ordered task occurrences.",
     description=(
-        "A deterministic HTTP wrapper around the recurrence engine. "
-        "POST a rule and a query window; receive the ordered, de-duplicated "
-        "occurrences inside that window."
+        "The scheduling core of Cadence. A deterministic HTTP wrapper around "
+        "the recurrence engine: POST a rule and a query window; receive the "
+        "ordered, de-duplicated occurrences inside that window."
     ),
 )
 app.state.limiter = limiter
@@ -69,7 +69,8 @@ def healthz() -> dict[str, str]:
 @app.get("/info", tags=["meta"], summary="Service metadata")
 def info() -> dict[str, Any]:
     return {
-        "name": "recurrence-engine",
+        "name": "cadence",
+        "component": "recurrence-engine",
         "version": app.version,
         "docs": "/docs",
         "expand": {"method": "POST", "path": "/v1/occurrences"},
