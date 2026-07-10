@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recurrence Engine — Playground</title>
+    <meta
+      name="description"
+      content="Interactive playground for the recurrence engine: build a rule, see the exact occurrences on a calendar."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%97%93%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">↻</span>
+        <div>
+          <h1>Recurrence Engine</h1>
+          <p class="tagline">Turn a recurrence rule into exact, ordered task occurrences.</p>
+        </div>
+      </div>
+      <button id="theme-toggle" class="ghost-btn" type="button" title="Toggle theme">
+        <span class="theme-icon">◐</span>
+      </button>
+    </header>
+
+    <main class="layout">
+      <!-- ---------------------------------------------------------------- -->
+      <!-- Rule builder                                                      -->
+      <!-- ---------------------------------------------------------------- -->
+      <section class="panel builder" aria-label="Rule builder">
+        <h2 class="panel-title">Rule</h2>
+
+        <div class="field">
+          <label for="start">Start date</label>
+          <input type="date" id="start" value="2026-01-05" />
+        </div>
+
+        <div class="field">
+          <label for="pattern">Pattern</label>
+          <div class="segmented" id="pattern" role="tablist">
+            <button class="seg" data-pattern="one_off" role="tab">One-off</button>
+            <button class="seg is-active" data-pattern="weekly" role="tab">Weekly</button>
+            <button class="seg" data-pattern="daily" role="tab">Daily</button>
+            <button class="seg" data-pattern="monthly" role="tab">Monthly</button>
+          </div>
+        </div>
+
+        <!-- Daily options -->
+        <div class="field pattern-opts" data-for="daily" hidden>
+          <label for="daily-interval">Every N days</label>
+          <input type="number" id="daily-interval" min="1" value="1" />
+        </div>
+
+        <!-- Weekly options -->
+        <div class="field pattern-opts" data-for="weekly">
+          <label>On weekdays</label>
+          <div class="weekdays" id="weekdays">
+            <button class="wd is-active" data-wd="0">Mon</button>
+            <button class="wd" data-wd="1">Tue</button>
+            <button class="wd is-active" data-wd="2">Wed</button>
+            <button class="wd" data-wd="3">Thu</button>
+            <button class="wd is-active" data-wd="4">Fri</button>
+            <button class="wd" data-wd="5">Sat</button>
+            <button class="wd" data-wd="6">Sun</button>
+          </div>
+          <label for="weekly-interval" class="sub">Every N weeks</label>
+          <input type="number" id="weekly-interval" min="1" value="1" />
+        </div>
+
+        <!-- Monthly options -->
+        <div class="field pattern-opts" data-for="monthly" hidden>
+          <label for="monthly-day">On day of month</label>
+          <input type="number" id="monthly-day" min="1" max="31" value="15" />
+          <label for="monthly-interval" class="sub">Every N months</label>
+          <input type="number" id="monthly-interval" min="1" value="1" />
+          <label class="sub">Month-end policy</label>
+          <div class="segmented small" id="policy">
+            <button class="seg is-active" data-policy="clamp">Clamp</button>
+            <button class="seg" data-policy="skip">Skip</button>
+          </div>
+          <p class="hint" data-policy-hint>“The 31st” lands on the last day of shorter months (Feb 28/29).</p>
+        </div>
+
+        <h2 class="panel-title">Ends</h2>
+        <div class="field">
+          <div class="segmented" id="end">
+            <button class="seg is-active" data-end="never">Never</button>
+            <button class="seg" data-end="until">On date</button>
+            <button class="seg" data-end="count">After N</button>
+          </div>
+        </div>
+        <div class="field end-opts" data-for="until" hidden>
+          <label for="until-date">Until (inclusive)</label>
+          <input type="date" id="until-date" value="2026-06-30" />
+        </div>
+        <div class="field end-opts" data-for="count" hidden>
+          <label for="count-value">After N occurrences</label>
+          <input type="number" id="count-value" min="1" value="5" />
+        </div>
+
+        <h2 class="panel-title">Window</h2>
+        <div class="field row">
+          <div>
+            <label for="window-start">From</label>
+            <input type="date" id="window-start" value="2026-01-01" />
+          </div>
+          <div>
+            <label for="window-end">To</label>
+            <input type="date" id="window-end" value="2026-06-30" />
+          </div>
+        </div>
+
+        <details class="api-config">
+          <summary>API endpoint</summary>
+          <input type="text" id="api-base" placeholder="/api" />
+          <p class="hint">Base URL of the running API. Use <code>http://127.0.0.1:8000</code> for local dev.</p>
+        </details>
+      </section>
+
+      <!-- ---------------------------------------------------------------- -->
+      <!-- Results                                                           -->
+      <!-- ---------------------------------------------------------------- -->
+      <section class="panel results" aria-label="Occurrences">
+        <div class="results-head">
+          <h2 class="panel-title">Occurrences</h2>
+          <span id="summary" class="summary-badge">—</span>
+        </div>
+        <div id="status" class="status" hidden></div>
+        <div id="calendar" class="calendar"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Deterministic · date-only core · 100% branch-tested</span>
+      <a href="https://github.com/JamesVillarosa" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
