@@ -153,10 +153,6 @@ function buildRequest() {
 // ---------------------------------------------------------------------------
 // Calendar rendering
 // ---------------------------------------------------------------------------
-function monthKey(y, m) {
-  return `${y}-${m}`;
-}
-
 function renderCalendar(occurrences, windowStart, windowEnd) {
   const cal = $("#calendar");
   cal.innerHTML = "";
@@ -297,7 +293,7 @@ async function run() {
     if (token !== inflight) return;
     setStatus(
       "error",
-      `Could not reach the API at ${apiBase()}. Start it locally or set the endpoint below.`
+      `Could not reach the API at ${apiBase() || "this origin"}. Try again or set the endpoint below.`
     );
     $("#summary").textContent = "—";
   }

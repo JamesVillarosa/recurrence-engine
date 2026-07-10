@@ -49,8 +49,9 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
-# The playground is a static site served from a different origin; allow it to
-# call the API from the browser. Tighten to specific origins in production.
+# The bundled playground is same-origin and needs no CORS, but allowing any
+# origin lets other clients call the API directly from a browser. Tighten to
+# specific origins if the API should not be publicly consumable.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
