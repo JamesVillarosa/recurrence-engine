@@ -153,7 +153,7 @@ function ruleSummary() {
       break;
     case "weekly": {
       const days = Array.from(state.weekdays).sort((a, b) => a - b).map((d) => WD_NAMES[d]);
-      head = `Weekly on ${days.join(", ") || "—"}, ${every(Number($("#weekly-interval").value), "week")}`;
+      head = `Weekly on ${days.join(", ") || "no days"}, ${every(Number($("#weekly-interval").value), "week")}`;
       break;
     }
     case "monthly":
@@ -246,7 +246,7 @@ function renderMonth(year, month, occSet, taskTitle) {
     const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     if (occSet.has(iso)) {
       cell.classList.add("occ");
-      if (taskTitle) cell.title = `${taskTitle} — ${iso}`;
+      if (taskTitle) cell.title = `${taskTitle} · ${iso}`;
     }
     cell.textContent = String(d);
     grid.appendChild(cell);
@@ -299,7 +299,7 @@ async function run() {
         detail = typeof err.detail === "string" ? err.detail : JSON.stringify(err.detail);
       } catch (_) { /* keep default */ }
       setStatus("error", `Rule rejected: ${detail}`);
-      $("#summary").textContent = "—";
+      $("#summary").textContent = "0";
       $("#occ-chips").innerHTML = "";
       return;
     }

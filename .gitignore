@@ -29,6 +29,15 @@ npm-debug.log*
 .env.local
 .env*.local
 
+# WSL virtualenv
+.venv-wsl/
+
+# Local AI/design tooling (not part of the product)
+.claude/
+.impeccable/
+.github/skills/
+.github/hooks/
+
 # Working notes (not part of deliverable)
 PLAN.md
 LOOM_SCRIPT.md
