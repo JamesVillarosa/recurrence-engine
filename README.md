@@ -53,17 +53,16 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -e ".[api,dev]"
 
 pytest --cov=engine --cov-report=term-missing        # run the suite
-uvicorn api:app --reload                              # serve the API at :8000
+uvicorn api:app --reload                              # serve everything at :8000
 ```
 
-Then open [`web/index.html`](web/index.html) in a browser and point the
-**API endpoint** field at `http://127.0.0.1:8000`, or serve the folder:
+One process serves both the API and the playground. Open:
 
-```bash
-python -m http.server 5173 --directory web           # http://127.0.0.1:5173
-```
+- <http://127.0.0.1:8000/> — the interactive playground
+- <http://127.0.0.1:8000/docs> — the OpenAPI docs
+- `POST http://127.0.0.1:8000/v1/occurrences` — the API
 
-Interactive API docs live at `http://127.0.0.1:8000/docs`.
+> If port 8000 is unavailable, pick another: `uvicorn api:app --port 8123`.
 
 ---
 
@@ -188,14 +187,23 @@ See [`DESIGN.md`](DESIGN.md) for the full rationale.
 
 ## Deployment
 
-- **API → Render:** [`render.yaml`](render.yaml) is a Blueprint (build, start,
-  health check, auto-deploy). Free tier.
-- **Playground → Vercel:** [`vercel.json`](vercel.json) serves [`web/`](web/) and
-  rewrites `/api/*` to the Render service, so the browser calls one origin with
-  no CORS. Update the destination host to your Render URL.
-- **Anywhere → Docker:** [`Dockerfile`](Dockerfile) builds a portable non-root
-  image (`docker build -t recurrence-engine . && docker run -p 8000:8000
-  recurrence-engine`).
+One service serves everything — the API **and** the playground it hosts at `/`
+— so a single deploy gives you one working URL. Pick either target:
+
+[![Deploy to Render](https://img.shields.io/badge/Deploy%20to-Render-46E3B7?logo=render&logoColor=white)](https://render.com/deploy?repo=https://github.com/JamesVillarosa/recurrence-engine)
+[![Deploy with Vercel](https://img.shields.io/badge/Deploy%20with-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/new/clone?repository-url=https://github.com/JamesVillarosa/recurrence-engine)
+
+- **Render (recommended):** the [`render.yaml`](render.yaml) Blueprint configures
+  build, start command, and `/healthz` check automatically. Click the button,
+  sign in, confirm — the live URL serves the playground and the API together.
+- **Vercel:** [`vercel.json`](vercel.json) routes all traffic to the FastAPI
+  app running as a Python serverless function (entry [`api/index.py`](api/index.py)).
+- **Docker (anywhere):** [`Dockerfile`](Dockerfile) builds a portable non-root
+  image: `docker build -t recurrence-engine . && docker run -p 8000:8000 recurrence-engine`,
+  then open <http://localhost:8000>.
+
+Once deployed, the site root is the interactive playground; `/docs` is the
+OpenAPI UI and `/v1/occurrences` is the API.
 
 ## License
 
