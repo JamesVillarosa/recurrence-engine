@@ -1,0 +1,5 @@
+# Runtime dependencies for the Vercel Python deployment.
+# (Local development installs these via `pip install -e ".[api]"`.)
+fastapi>=0.111
+slowapi>=0.1.9
+pydantic>=2.7

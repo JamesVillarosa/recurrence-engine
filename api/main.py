@@ -18,17 +18,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 from typing import Any
 
 from engine import get_occurrences
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from .schemas import OccurrencesRequest, OccurrencesResponse
+
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
@@ -61,8 +65,8 @@ def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/", tags=["meta"], summary="Service metadata")
-def root() -> dict[str, Any]:
+@app.get("/info", tags=["meta"], summary="Service metadata")
+def info() -> dict[str, Any]:
     return {
         "name": "recurrence-engine",
         "version": app.version,
@@ -114,3 +118,11 @@ async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse
     is a defensive backstop for invariants only the engine can enforce.
     """
     return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+# Serve the playground from the same origin as the API. Mounted last so the
+# JSON API routes above always take precedence; the static mount only handles
+# what they don't (/, /styles.css, /app.js). With one origin the browser needs
+# no CORS and the client calls the API with a relative path.
+if WEB_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="playground")

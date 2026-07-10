@@ -23,10 +23,17 @@ def test_healthz(client: TestClient) -> None:
     assert resp.json() == {"status": "ok"}
 
 
-def test_root_metadata(client: TestClient) -> None:
-    resp = client.get("/")
+def test_info_metadata(client: TestClient) -> None:
+    resp = client.get("/info")
     assert resp.status_code == 200
     assert resp.json()["name"] == "recurrence-engine"
+
+
+def test_root_serves_playground(client: TestClient) -> None:
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["content-type"]
+    assert "Recurrence Engine" in resp.text
 
 
 def test_expand_weekly_with_count(client: TestClient) -> None:

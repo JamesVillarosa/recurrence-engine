@@ -42,13 +42,15 @@ function initTheme() {
 // API base URL
 // ---------------------------------------------------------------------------
 function apiBase() {
+  // Default: same origin as the page (the API serves this playground). Empty
+  // string yields relative calls like "/v1/occurrences" — no CORS needed.
   const raw = $("#api-base").value.trim();
-  return (raw || "/api").replace(/\/$/, "");
+  return raw.replace(/\/$/, "");
 }
 
 function initApiBase() {
   const input = $("#api-base");
-  input.value = localStorage.getItem("re-api-base") || "/api";
+  input.value = localStorage.getItem("re-api-base") || "";
   input.addEventListener("change", () => {
     localStorage.setItem("re-api-base", input.value.trim());
     run();
