@@ -5,6 +5,10 @@
 ![Coverage](https://img.shields.io/badge/engine%20branch%20coverage-100%25-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
+**▶ Live demo: https://cadence-5vxj.onrender.com** &nbsp;·&nbsp; [API docs](https://cadence-5vxj.onrender.com/docs)
+
+> Hosted on Render's free tier — the first request after idle may take ~50s to wake.
+
 **Cadence** is a team scheduling workspace for recurring and one-off tasks — a
 ClickUp-style task calendar with a Slack-style chat beside it. Its scheduling
 core is a **recurrence engine**: a deterministic function that expands a
