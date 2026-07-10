@@ -1,0 +1,7 @@
+# Normalise line endings: LF in the repository for all text files.
+* text=auto eol=lf
+
+# Explicit binary types (never touch).
+*.png binary
+*.jpg binary
+*.ico binary
