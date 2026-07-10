@@ -1,13 +1,17 @@
-# Recurrence Engine
+# Cadence — Team Scheduling
 
 [![CI](https://github.com/JamesVillarosa/recurrence-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/JamesVillarosa/recurrence-engine/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue)
 ![Coverage](https://img.shields.io/badge/engine%20branch%20coverage-100%25-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-A deterministic engine that expands a **recurrence rule** into concrete, ordered,
-de-duplicated **task occurrences** within a query window — the piece of a
-scheduler where correctness is hardest and matters most.
+**Cadence** is a team scheduling workspace for recurring and one-off tasks — a
+ClickUp-style task calendar with a Slack-style chat beside it. Its scheduling
+core is a **recurrence engine**: a deterministic function that expands a
+**recurrence rule** into concrete, ordered, de-duplicated **task occurrences**
+within a query window — the piece of a scheduler where correctness is hardest
+and matters most. That engine is the focus of this repository, built and tested
+to production standard; the workspace UI shows how it fits into the product.
 
 ```python
 from datetime import date
@@ -35,7 +39,7 @@ occurrence is correctly the next matching weekday (Wednesday), not the start.
 | **Engine** | [`engine/`](engine/) | Pure, dependency-free rule expansion. The product. |
 | **Tests** | [`tests/`](tests/) | Unit + property-based suite, 100% engine branch coverage. |
 | **API** | [`api/`](api/) | Thin FastAPI layer: validation, rate limiting, ETag caching. |
-| **Playground** | [`web/`](web/) | Zero-dependency interactive rule builder + calendar. |
+| **Workspace** | [`web/`](web/) | Cadence UI — scheduler (rule builder + calendar) in a ClickUp/Slack-style shell. |
 | **CI/CD** | [`.github/`](.github/), [`render.yaml`](render.yaml), [`vercel.json`](vercel.json), [`Dockerfile`](Dockerfile) | Test matrix and one-click deploys. |
 
 ## Supported rules
