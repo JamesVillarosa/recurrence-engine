@@ -1,0 +1,15 @@
+.venv/
+.git/
+.github/
+web/
+tests/
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+__pycache__/
+*.pyc
+.coverage
+coverage.xml
+PLAN.md
