@@ -3,139 +3,238 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Recurrence Engine — Playground</title>
+    <title>Cadence — Team Scheduling</title>
     <meta
       name="description"
-      content="Interactive playground for the recurrence engine: build a rule, see the exact occurrences on a calendar."
+      content="Cadence: team scheduling for recurring and one-off tasks. Turn a recurrence rule into exact, ordered task occurrences on a shared calendar."
     />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%97%93%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%237b68ee'/%3E%3Ctext x='50' y='72' font-size='64' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">↻</span>
-        <div>
-          <h1>Recurrence Engine</h1>
-          <p class="tagline">Turn a recurrence rule into exact, ordered task occurrences.</p>
-        </div>
-      </div>
-      <button id="theme-toggle" class="ghost-btn" type="button" title="Toggle theme">
-        <span class="theme-icon">◐</span>
-      </button>
-    </header>
-
-    <main class="layout">
-      <!-- ---------------------------------------------------------------- -->
-      <!-- Rule builder                                                      -->
-      <!-- ---------------------------------------------------------------- -->
-      <section class="panel builder" aria-label="Rule builder">
-        <h2 class="panel-title">Rule</h2>
-
-        <div class="field">
-          <label for="start">Start date</label>
-          <input type="date" id="start" value="2026-01-05" />
-        </div>
-
-        <div class="field">
-          <label for="pattern">Pattern</label>
-          <div class="segmented" id="pattern" role="tablist">
-            <button class="seg" data-pattern="one_off" role="tab">One-off</button>
-            <button class="seg is-active" data-pattern="weekly" role="tab">Weekly</button>
-            <button class="seg" data-pattern="daily" role="tab">Daily</button>
-            <button class="seg" data-pattern="monthly" role="tab">Monthly</button>
+    <div class="app">
+      <!-- ============================================================= -->
+      <!-- Sidebar (Slack-style)                                          -->
+      <!-- ============================================================= -->
+      <aside class="sidebar">
+        <div class="workspace">
+          <div class="workspace-logo">C</div>
+          <div class="workspace-meta">
+            <span class="workspace-name">Cadence</span>
+            <span class="workspace-sub">Acme Operations</span>
           </div>
         </div>
 
-        <!-- Daily options -->
-        <div class="field pattern-opts" data-for="daily" hidden>
-          <label for="daily-interval">Every N days</label>
-          <input type="number" id="daily-interval" min="1" value="1" />
-        </div>
-
-        <!-- Weekly options -->
-        <div class="field pattern-opts" data-for="weekly">
-          <label>On weekdays</label>
-          <div class="weekdays" id="weekdays">
-            <button class="wd is-active" data-wd="0">Mon</button>
-            <button class="wd" data-wd="1">Tue</button>
-            <button class="wd is-active" data-wd="2">Wed</button>
-            <button class="wd" data-wd="3">Thu</button>
-            <button class="wd is-active" data-wd="4">Fri</button>
-            <button class="wd" data-wd="5">Sat</button>
-            <button class="wd" data-wd="6">Sun</button>
+        <nav class="nav">
+          <div class="nav-section">
+            <span class="nav-label">Workspace</span>
+            <a class="nav-item is-active" href="#scheduler">
+              <span class="nav-ico">🗓️</span> Scheduler
+            </a>
+            <a class="nav-item is-muted" href="#" data-preview>
+              <span class="nav-ico">✔️</span> My Tasks <span class="chip">soon</span>
+            </a>
+            <a class="nav-item is-muted" href="#" data-preview>
+              <span class="nav-ico">📊</span> Dashboards <span class="chip">soon</span>
+            </a>
           </div>
-          <label for="weekly-interval" class="sub">Every N weeks</label>
-          <input type="number" id="weekly-interval" min="1" value="1" />
-        </div>
 
-        <!-- Monthly options -->
-        <div class="field pattern-opts" data-for="monthly" hidden>
-          <label for="monthly-day">On day of month</label>
-          <input type="number" id="monthly-day" min="1" max="31" value="15" />
-          <label for="monthly-interval" class="sub">Every N months</label>
-          <input type="number" id="monthly-interval" min="1" value="1" />
-          <label class="sub">Month-end policy</label>
-          <div class="segmented small" id="policy">
-            <button class="seg is-active" data-policy="clamp">Clamp</button>
-            <button class="seg" data-policy="skip">Skip</button>
+          <div class="nav-section">
+            <span class="nav-label">Channels</span>
+            <a class="nav-item is-muted" href="#" data-preview># general <span class="chip">soon</span></a>
+            <a class="nav-item is-muted" href="#" data-preview># logistics <span class="chip">soon</span></a>
+            <a class="nav-item is-muted" href="#" data-preview># deliveries <span class="chip">soon</span></a>
           </div>
-          <p class="hint" data-policy-hint>“The 31st” lands on the last day of shorter months (Feb 28/29).</p>
-        </div>
 
-        <h2 class="panel-title">Ends</h2>
-        <div class="field">
-          <div class="segmented" id="end">
-            <button class="seg is-active" data-end="never">Never</button>
-            <button class="seg" data-end="until">On date</button>
-            <button class="seg" data-end="count">After N</button>
+          <div class="nav-section">
+            <span class="nav-label">Lists</span>
+            <a class="nav-item is-muted" href="#" data-preview>
+              <span class="dot dot-a"></span> Operations <span class="chip">soon</span>
+            </a>
+            <a class="nav-item is-muted" href="#" data-preview>
+              <span class="dot dot-b"></span> Deliveries <span class="chip">soon</span>
+            </a>
           </div>
-        </div>
-        <div class="field end-opts" data-for="until" hidden>
-          <label for="until-date">Until (inclusive)</label>
-          <input type="date" id="until-date" value="2026-06-30" />
-        </div>
-        <div class="field end-opts" data-for="count" hidden>
-          <label for="count-value">After N occurrences</label>
-          <input type="number" id="count-value" min="1" value="5" />
-        </div>
+        </nav>
 
-        <h2 class="panel-title">Window</h2>
-        <div class="field row">
-          <div>
-            <label for="window-start">From</label>
-            <input type="date" id="window-start" value="2026-01-01" />
+        <div class="sidebar-foot">
+          <div class="me">
+            <span class="avatar" style="--a: #f0a">JC</span>
+            <div class="me-meta">
+              <span class="me-name">James Carl</span>
+              <span class="me-status">● online</span>
+            </div>
           </div>
-          <div>
-            <label for="window-end">To</label>
-            <input type="date" id="window-end" value="2026-06-30" />
+          <button id="theme-toggle" class="icon-btn" type="button" title="Toggle theme">◐</button>
+        </div>
+      </aside>
+
+      <!-- ============================================================= -->
+      <!-- Main                                                           -->
+      <!-- ============================================================= -->
+      <main class="main">
+        <header class="topbar">
+          <div class="crumbs">
+            <span class="crumb-muted">Operations</span>
+            <span class="crumb-sep">/</span>
+            <span class="crumb">Recurring Task Scheduler</span>
           </div>
+          <div class="topbar-right">
+            <div class="avatars">
+              <span class="avatar sm" style="--a:#7b68ee" title="You">JC</span>
+              <span class="avatar sm" style="--a:#e8734a" title="Luke">LD</span>
+              <span class="avatar sm" style="--a:#2fb27c" title="Ops VA">VA</span>
+            </div>
+            <a class="btn-ghost" href="https://github.com/JamesVillarosa/recurrence-engine" target="_blank" rel="noopener">View source</a>
+          </div>
+        </header>
+
+        <div class="content">
+          <!-- ---------- Rule builder (ClickUp task-create style) ------ -->
+          <section class="panel builder" aria-label="Recurring task builder">
+            <div class="panel-head">
+              <h2>New recurring task</h2>
+              <p class="panel-sub">Define a rule — Cadence expands it into exact occurrences.</p>
+            </div>
+
+            <div class="field">
+              <label for="task-title">Task</label>
+              <input type="text" id="task-title" value="Month-end reconciliation" />
+            </div>
+
+            <div class="field">
+              <label for="start">Start date</label>
+              <input type="date" id="start" value="2026-01-05" />
+            </div>
+
+            <div class="field">
+              <label>Repeats</label>
+              <div class="segmented" id="pattern">
+                <button class="seg" data-pattern="one_off" type="button">Once</button>
+                <button class="seg" data-pattern="weekly" type="button">Weekly</button>
+                <button class="seg" data-pattern="daily" type="button">Daily</button>
+                <button class="seg is-active" data-pattern="monthly" type="button">Monthly</button>
+              </div>
+            </div>
+
+            <div class="field pattern-opts" data-for="daily" hidden>
+              <label for="daily-interval">Every N days</label>
+              <input type="number" id="daily-interval" min="1" value="1" />
+            </div>
+
+            <div class="field pattern-opts" data-for="weekly" hidden>
+              <label>On weekdays</label>
+              <div class="weekdays" id="weekdays">
+                <button class="wd is-active" data-wd="0" type="button">Mon</button>
+                <button class="wd" data-wd="1" type="button">Tue</button>
+                <button class="wd is-active" data-wd="2" type="button">Wed</button>
+                <button class="wd" data-wd="3" type="button">Thu</button>
+                <button class="wd is-active" data-wd="4" type="button">Fri</button>
+                <button class="wd" data-wd="5" type="button">Sat</button>
+                <button class="wd" data-wd="6" type="button">Sun</button>
+              </div>
+              <label for="weekly-interval" class="sub">Every N weeks</label>
+              <input type="number" id="weekly-interval" min="1" value="1" />
+            </div>
+
+            <div class="field pattern-opts" data-for="monthly">
+              <label for="monthly-day">On day of month</label>
+              <input type="number" id="monthly-day" min="1" max="31" value="31" />
+              <label for="monthly-interval" class="sub">Every N months</label>
+              <input type="number" id="monthly-interval" min="1" value="1" />
+              <label class="sub">If the day doesn't exist (e.g. the 31st in Feb)</label>
+              <div class="segmented small" id="policy">
+                <button class="seg is-active" data-policy="clamp" type="button">Clamp</button>
+                <button class="seg" data-policy="skip" type="button">Skip</button>
+              </div>
+              <p class="hint" data-policy-hint>Clamp: lands on the last day of shorter months (Feb 28/29).</p>
+            </div>
+
+            <div class="field">
+              <label>Ends</label>
+              <div class="segmented" id="end">
+                <button class="seg is-active" data-end="never" type="button">Never</button>
+                <button class="seg" data-end="until" type="button">On date</button>
+                <button class="seg" data-end="count" type="button">After N</button>
+              </div>
+            </div>
+            <div class="field end-opts" data-for="until" hidden>
+              <label for="until-date">Until (inclusive)</label>
+              <input type="date" id="until-date" value="2026-06-30" />
+            </div>
+            <div class="field end-opts" data-for="count" hidden>
+              <label for="count-value">After N occurrences</label>
+              <input type="number" id="count-value" min="1" value="6" />
+            </div>
+
+            <div class="field row">
+              <div>
+                <label for="window-start">Show from</label>
+                <input type="date" id="window-start" value="2026-01-01" />
+              </div>
+              <div>
+                <label for="window-end">Show to</label>
+                <input type="date" id="window-end" value="2026-06-30" />
+              </div>
+            </div>
+
+            <details class="api-config">
+              <summary>API endpoint</summary>
+              <input type="text" id="api-base" placeholder="(same origin)" />
+              <p class="hint">Leave blank to use this site's own API. Set a full URL to point elsewhere.</p>
+            </details>
+          </section>
+
+          <!-- ---------- Calendar (ClickUp calendar view) -------------- -->
+          <section class="panel calendar-panel" aria-label="Scheduled occurrences">
+            <div class="panel-head row-between">
+              <div>
+                <h2 id="cal-title">Month-end reconciliation</h2>
+                <p class="panel-sub" id="rule-summary">—</p>
+              </div>
+              <span id="summary" class="count-badge">—</span>
+            </div>
+            <div id="status" class="status" hidden></div>
+            <div id="calendar" class="calendar"></div>
+          </section>
+
+          <!-- ---------- Activity / chat (Slack-style) ----------------- -->
+          <aside class="panel activity" aria-label="Team activity">
+            <div class="channel-head">
+              <span class="channel-name"># scheduling</span>
+              <span class="channel-meta">3 members</span>
+            </div>
+            <div class="messages">
+              <div class="msg">
+                <span class="avatar sm" style="--a:#e8734a">LD</span>
+                <div>
+                  <div class="msg-head"><b>Luke</b> <time>9:32 AM</time></div>
+                  <p>Can the month-end task still fire in February? Don't want it silently skipped.</p>
+                </div>
+              </div>
+              <div class="msg">
+                <span class="avatar sm" style="--a:#7b68ee">JC</span>
+                <div>
+                  <div class="msg-head"><b>James</b> <time>9:34 AM</time></div>
+                  <p>Yes — set it to <b>Clamp</b>. The 31st lands on Feb 28 (29 in leap years), so it never disappears.</p>
+                </div>
+              </div>
+              <div class="msg">
+                <span class="avatar sm" style="--a:#2fb27c">VA</span>
+                <div>
+                  <div class="msg-head"><b>Ops VA</b> <time>9:36 AM</time></div>
+                  <p>Applied to <b>Operations</b>. Calendar updated ✅</p>
+                </div>
+              </div>
+            </div>
+            <div class="composer">
+              <input type="text" placeholder="Message #scheduling" disabled />
+              <span class="composer-note">Chat is a preview of the full Cadence app</span>
+            </div>
+          </aside>
         </div>
-
-        <details class="api-config">
-          <summary>API endpoint</summary>
-          <input type="text" id="api-base" placeholder="(same origin)" />
-          <p class="hint">Leave blank to use this site's own API. Set a full URL only to point at a different server.</p>
-        </details>
-      </section>
-
-      <!-- ---------------------------------------------------------------- -->
-      <!-- Results                                                           -->
-      <!-- ---------------------------------------------------------------- -->
-      <section class="panel results" aria-label="Occurrences">
-        <div class="results-head">
-          <h2 class="panel-title">Occurrences</h2>
-          <span id="summary" class="summary-badge">—</span>
-        </div>
-        <div id="status" class="status" hidden></div>
-        <div id="calendar" class="calendar"></div>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <span>Deterministic · date-only core · 100% branch-tested</span>
-      <a href="https://github.com/JamesVillarosa/recurrence-engine" target="_blank" rel="noopener">GitHub</a>
-    </footer>
+      </main>
+    </div>
 
     <script src="app.js"></script>
   </body>
