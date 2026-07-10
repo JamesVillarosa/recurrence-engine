@@ -413,6 +413,20 @@ input:disabled { background: var(--surface-2); color: var(--text-faint); cursor:
   white-space: nowrap;
   border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
 }
+.occ-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 20px 14px; }
+.occ-chip {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.occ-chip.more { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+.occ-chips:empty { display: none; }
+
 .status { margin: 0 20px 14px; padding: 10px 14px; border-radius: var(--r-sm); font-size: 13px; }
 .status.error { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
 .status.loading { background: var(--surface-2); color: var(--text-dim); }

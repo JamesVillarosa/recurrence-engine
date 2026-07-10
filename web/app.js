@@ -171,7 +171,27 @@ function ruleSummary() {
 // ---------------------------------------------------------------------------
 // Calendar rendering
 // ---------------------------------------------------------------------------
-function renderCalendar(occurrences, windowStart, windowEnd) {
+function renderChips(occurrences) {
+  const box = $("#occ-chips");
+  box.innerHTML = "";
+  const shown = occurrences.slice(0, 6);
+  for (const iso of shown) {
+    const d = new Date(iso + "T00:00:00");
+    const chip = document.createElement("span");
+    chip.className = "occ-chip";
+    chip.textContent = `${MONTHS[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
+    box.appendChild(chip);
+  }
+  const rest = occurrences.length - shown.length;
+  if (rest > 0) {
+    const more = document.createElement("span");
+    more.className = "occ-chip more";
+    more.textContent = `+${rest} more`;
+    box.appendChild(more);
+  }
+}
+
+function renderCalendar(occurrences, windowStart, windowEnd, taskTitle) {
   const cal = $("#calendar");
   cal.innerHTML = "";
   if (!windowStart || !windowEnd || windowStart > windowEnd) {
@@ -187,7 +207,7 @@ function renderCalendar(occurrences, windowStart, windowEnd) {
   let painted = 0;
   while (y < end.getFullYear() || (y === end.getFullYear() && m <= end.getMonth())) {
     if (painted >= MAX_MONTHS) break;
-    cal.appendChild(renderMonth(y, m, occSet));
+    cal.appendChild(renderMonth(y, m, occSet, taskTitle));
     painted += 1;
     m += 1;
     if (m > 11) { m = 0; y += 1; }
@@ -195,7 +215,7 @@ function renderCalendar(occurrences, windowStart, windowEnd) {
   if (painted === 0) cal.innerHTML = `<div class="empty-state">No months in range.</div>`;
 }
 
-function renderMonth(year, month, occSet) {
+function renderMonth(year, month, occSet, taskTitle) {
   const wrap = document.createElement("div");
   wrap.className = "month";
   const title = document.createElement("h3");
@@ -224,7 +244,10 @@ function renderMonth(year, month, occSet) {
     const cell = document.createElement("div");
     cell.className = "day";
     const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    if (occSet.has(iso)) cell.classList.add("occ");
+    if (occSet.has(iso)) {
+      cell.classList.add("occ");
+      if (taskTitle) cell.title = `${taskTitle} — ${iso}`;
+    }
     cell.textContent = String(d);
     grid.appendChild(cell);
   }
@@ -277,17 +300,20 @@ async function run() {
       } catch (_) { /* keep default */ }
       setStatus("error", `Rule rejected: ${detail}`);
       $("#summary").textContent = "—";
+      $("#occ-chips").innerHTML = "";
       return;
     }
     const data = await resp.json();
     setStatus(null);
     const n = data.count;
     $("#summary").textContent = n === 1 ? "1 occurrence" : `${n} occurrences`;
-    renderCalendar(data.occurrences, windowStart, windowEnd);
+    renderChips(data.occurrences);
+    renderCalendar(data.occurrences, windowStart, windowEnd, title);
   } catch (e) {
     if (token !== inflight) return;
     setStatus("error", `Could not reach the API at ${apiBase() || "this origin"}. Try again or set the endpoint.`);
     $("#summary").textContent = "—";
+    $("#occ-chips").innerHTML = "";
   }
 }
 
