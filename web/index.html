@@ -257,6 +257,18 @@
               <span class="composer-note">Chat is a preview of the full Cadence app</span>
             </div>
           </aside>
+
+          <!-- ---------- Task inbox (populated by the automation webhook) --- -->
+          <section class="panel tasks-panel" aria-label="Task inbox">
+            <div class="panel-head row-between">
+              <div>
+                <h2>Tasks</h2>
+                <p class="panel-sub">One-off tasks. Rows created by a workflow are tagged <b>Automated</b>.</p>
+              </div>
+              <button id="tasks-refresh" class="btn-ghost" type="button">Refresh</button>
+            </div>
+            <div id="tasks-list" class="tasks-list"></div>
+          </section>
         </div>
       </main>
     </div>

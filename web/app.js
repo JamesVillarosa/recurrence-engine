@@ -256,6 +256,86 @@ function renderMonth(year, month, occSet, taskTitle) {
 }
 
 // ---------------------------------------------------------------------------
+// Task inbox — reads /api/tasks, the tasks the automation webhook creates.
+// Titles/notes come from an external workflow, so every value is written with
+// textContent (never innerHTML) to keep the render injection-proof.
+// ---------------------------------------------------------------------------
+function taskRow(task) {
+  const row = document.createElement("div");
+  row.className = "task-row" + (task.completed ? " is-done" : "");
+
+  const main = document.createElement("div");
+  main.className = "task-main";
+
+  const title = document.createElement("div");
+  title.className = "task-title";
+  const name = document.createElement("span");
+  name.textContent = task.title;
+  title.appendChild(name);
+  if (task.source === "automation") {
+    const badge = document.createElement("span");
+    badge.className = "badge-auto";
+    badge.textContent = "Automated";
+    title.appendChild(badge);
+  }
+
+  const meta = document.createElement("div");
+  meta.className = "task-meta";
+  const bits = [`Due ${task.due_date}`];
+  if (task.notes) bits.push(task.notes);
+  meta.textContent = bits.join(" · ");
+
+  main.append(title, meta);
+  row.appendChild(main);
+
+  if (task.completed) {
+    const tag = document.createElement("span");
+    tag.className = "task-done-tag";
+    tag.textContent = "✓ Done";
+    row.appendChild(tag);
+  } else {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "task-action";
+    btn.textContent = "Complete";
+    btn.addEventListener("click", () => completeTask(task.id));
+    row.appendChild(btn);
+  }
+  return row;
+}
+
+function renderTasks(tasks) {
+  const list = $("#tasks-list");
+  list.innerHTML = "";
+  if (!tasks.length) {
+    const empty = document.createElement("div");
+    empty.className = "tasks-empty";
+    empty.textContent = "No tasks yet. Automation-created tasks will appear here.";
+    list.appendChild(empty);
+    return;
+  }
+  tasks.forEach((t) => list.appendChild(taskRow(t)));
+}
+
+async function loadTasks() {
+  try {
+    const resp = await fetch(`${apiBase()}/api/tasks`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    renderTasks(data.tasks || []);
+  } catch (_) {
+    /* endpoint may be unset in the playground; leave the panel as-is */
+  }
+}
+
+async function completeTask(id) {
+  try {
+    await fetch(`${apiBase()}/api/tasks/${id}/complete`, { method: "POST" });
+  } catch (_) { /* ignore; reload reflects real state */ }
+  loadTasks();
+}
+
+// ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
 function setStatus(kind, message) {
@@ -343,7 +423,12 @@ function init() {
     });
   }
   $$("input").forEach((input) => input.addEventListener("input", scheduleRun));
+  const refresh = $("#tasks-refresh");
+  if (refresh) refresh.addEventListener("click", loadTasks);
   run();
+  loadTasks();
+  // Keep the inbox live during a screen-share without hammering the API.
+  setInterval(loadTasks, 15000);
 }
 
 document.addEventListener("DOMContentLoaded", init);
