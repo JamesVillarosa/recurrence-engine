@@ -1,0 +1,80 @@
+{
+  "name": "Cadence \u2014 Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "error-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Format the failure into a loud, readable Slack alert.\nconst e = $input.first().json;\nconst wf = (e.workflow && e.workflow.name) || \"unknown workflow\";\nconst node = (e.execution && e.execution.lastNodeExecuted) || (e.node && e.node.name) || \"unknown node\";\nconst msg = (e.execution && e.execution.error && e.execution.error.message) ||\n  (e.error && e.error.message) || \"no message\";\nconst url = (e.execution && e.execution.url) || \"(no execution URL)\";\nconst text =\n  `:rotating_light: *Workflow failed:* ${wf}\\n` +\n  `*Failed node:* ${node}\\n` +\n  `*Error:* ${msg}\\n` +\n  `*Execution:* ${url}`;\nreturn [{ json: { slackText: text } }];\n"
+      },
+      "id": "format-error",
+      "name": "Format Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_SLACK_WEBHOOK_URL_ALERTS",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.slackText }) }}",
+        "options": {}
+      },
+      "id": "slack-alert",
+      "name": "Post Alert to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert": {
+      "main": [
+        [
+          {
+            "node": "Post Alert to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

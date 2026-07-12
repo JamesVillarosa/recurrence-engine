@@ -1,0 +1,285 @@
+{
+  "name": "Cadence \u2014 Daily Ops Brief",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger (Demo)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger (Daily 08:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/gviz/tq?tqx=out:csv",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "fetch-csv",
+      "name": "Fetch Inventory CSV",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -320,
+        140
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Parse the CSV and compute every number deterministically in code.\n// The AI node downstream only turns THESE numbers into prose; it never does math.\nconst raw = $input.first().json.data || $input.first().json.body || \"\";\nconst lines = String(raw).trim().split(/\\r?\\n/).filter((l) => l.length > 0);\nif (lines.length < 2) {\n  throw new Error(\"CSV had no data rows. Check the sheet URL / sharing.\");\n}\n\nconst strip = (s) => s.trim().replace(/^\"(.*)\"$/, \"$1\");\nconst header = lines[0].split(\",\").map(strip);\nconst idx = (name) => header.indexOf(name);\nconst col = {\n  product: idx(\"product_name\"),\n  sold: idx(\"units_sold_yesterday\"),\n  price: idx(\"unit_price\"),\n  cost: idx(\"unit_cost\"),\n  stock: idx(\"stock_level\"),\n  reorder: idx(\"reorder_point\"),\n};\nfor (const [k, v] of Object.entries(col)) {\n  if (v === -1) throw new Error(`CSV is missing the '${k}' column.`);\n}\n\nconst num = (v) => {\n  const n = Number(String(v).replace(/[^0-9.\\-]/g, \"\"));\n  return Number.isFinite(n) ? n : 0;\n};\n\nconst products = lines.slice(1).map((line) => {\n  const c = line.split(\",\").map(strip);\n  const price = num(c[col.price]);\n  const cost = num(c[col.cost]);\n  const sold = num(c[col.sold]);\n  const stock = num(c[col.stock]);\n  const reorder = num(c[col.reorder]);\n  const revenue = +(sold * price).toFixed(2);\n  const margin = price > 0 ? (price - cost) / price : 0;\n  return {\n    product_name: c[col.product],\n    units_sold_yesterday: sold,\n    unit_price: price,\n    unit_cost: cost,\n    stock_level: stock,\n    reorder_point: reorder,\n    revenue,\n    margin,\n  };\n});\n\nconst totalRevenue = +products.reduce((s, p) => s + p.revenue, 0).toFixed(2);\nconst totalUnits = products.reduce((s, p) => s + p.units_sold_yesterday, 0);\nconst top3 = [...products].sort((a, b) => b.revenue - a.revenue).slice(0, 3);\nconst lowStock = products.filter((p) => p.stock_level < p.reorder_point);\nconst lowMargin = products.filter((p) => p.margin < 0.25);\n\nconst money = (n) => \"$\" + n.toLocaleString(\"en-US\", { minimumFractionDigits: 2, maximumFractionDigits: 2 });\nconst pct = (n) => (n * 100).toFixed(1) + \"%\";\n\nconst prompt =\n  \"You are an operations analyst. Write a short, plain-English daily ops brief \" +\n  \"(4-6 sentences, no bullet lists, no preamble) using ONLY these already-computed numbers. \" +\n  \"Do not invent figures.\\n\\n\" +\n  `Date: yesterday\\n` +\n  `Total revenue: ${money(totalRevenue)}\\n` +\n  `Total units sold: ${totalUnits}\\n` +\n  `Top sellers: ${top3.map((p) => `${p.product_name} (${money(p.revenue)})`).join(\", \")}\\n` +\n  `Low stock (${lowStock.length}): ${lowStock.map((p) => `${p.product_name} ${p.stock_level}/${p.reorder_point}`).join(\", \") || \"none\"}\\n` +\n  `Low margin (<25%) (${lowMargin.length}): ${lowMargin.map((p) => `${p.product_name} ${pct(p.margin)}`).join(\", \") || \"none\"}\\n`;\n\nconst anthropicPayload = {\n  model: \"claude-sonnet-5\",\n  max_tokens: 400,\n  messages: [{ role: \"user\", content: prompt }],\n};\n\nconst headerLine =\n  `:bar_chart: *Daily Ops Brief* \u2014 Revenue ${money(totalRevenue)} | ${totalUnits} units | ` +\n  `${lowStock.length} low-stock | ${lowMargin.length} low-margin`;\n\nreturn [{\n  json: {\n    totalRevenue,\n    totalUnits,\n    top3,\n    low_stock: lowStock,\n    low_margin: lowMargin,\n    prompt,\n    anthropicPayload,\n    headerLine,\n  },\n}];\n"
+      },
+      "id": "compute-metrics",
+      "name": "Compute Metrics & Flags",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.anthropicPayload) }}",
+        "options": {}
+      },
+      "id": "anthropic",
+      "name": "Claude \u2014 Write Brief",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        180,
+        20
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Pull Claude's prose out of the API response and prepend the hard numbers,\n// which we read back from the Compute node so they survive the HTTP round-trip.\nconst metrics = $('Compute Metrics & Flags').first().json;\nconst resp = $input.first().json;\nlet claudeText = \"\";\nif (resp && Array.isArray(resp.content) && resp.content[0] && resp.content[0].text) {\n  claudeText = resp.content[0].text.trim();\n} else {\n  claudeText = \"(AI brief unavailable; numbers below are authoritative.)\";\n}\nconst slackText = `${metrics.headerLine}\\n\\n${claudeText}`;\nreturn [{ json: { slackText } }];\n"
+      },
+      "id": "extract-brief",
+      "name": "Extract Brief + Prepend Numbers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_SLACK_WEBHOOK_URL_DAILY_OPS",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.slackText }) }}",
+        "options": {}
+      },
+      "id": "slack-brief",
+      "name": "Post Brief to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        20
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Emit ONE ITEM PER low-stock product. If the list is empty this returns [],\n// so the Cadence HTTP node simply never runs \u2014 no IF node needed.\nconst metrics = $('Compute Metrics & Flags').first().json;\nconst lowStock = metrics.low_stock || [];\nconst tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);\nconst slug = (s) => String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g, \"-\").replace(/^-|-$/g, \"\");\n\nreturn lowStock.map((p) => ({\n  json: {\n    body: {\n      title: `Restock: ${p.product_name}`,\n      due_date: tomorrow,\n      notes: `Stock ${p.stock_level} is at or below reorder point ${p.reorder_point}.`,\n      source_key: `restock:${slug(p.product_name)}`,\n    },\n  },\n}));\n"
+      },
+      "id": "build-restock",
+      "name": "Low-stock \u2192 Restock Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_CADENCE_URL/api/webhooks/restock-task",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-webhook-secret",
+              "value": "YOUR_CADENCE_WEBHOOK_SECRET"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      },
+      "id": "post-cadence",
+      "name": "Create Restock Task in Cadence",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Manual Trigger (Demo)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Inventory CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger (Daily 08:00)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Inventory CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Inventory CSV": {
+      "main": [
+        [
+          {
+            "node": "Compute Metrics & Flags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Metrics & Flags": {
+      "main": [
+        [
+          {
+            "node": "Claude \u2014 Write Brief",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Low-stock \u2192 Restock Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude \u2014 Write Brief": {
+      "main": [
+        [
+          {
+            "node": "Extract Brief + Prepend Numbers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Brief + Prepend Numbers": {
+      "main": [
+        [
+          {
+            "node": "Post Brief to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Low-stock \u2192 Restock Items": {
+      "main": [
+        [
+          {
+            "node": "Create Restock Task in Cadence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "pinData": {}
+}
