@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -30,11 +32,21 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from . import store
 from .schemas import OccurrencesRequest, OccurrencesResponse
+from .webhooks import router as webhooks_router
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Ensure the task store's schema exists before serving requests."""
+    store.init_db()
+    yield
+
 
 app = FastAPI(
     title="Cadence Scheduling API",
@@ -45,9 +57,14 @@ app = FastAPI(
         "the recurrence engine: POST a rule and a query window; receive the "
         "ordered, de-duplicated occurrences inside that window."
     ),
+    lifespan=lifespan,
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
+# Automation ingress (webhook + task read/complete). Registered before the
+# static mount below so its /api/* routes take precedence over the catch-all.
+app.include_router(webhooks_router)
 
 # The bundled playground is same-origin and needs no CORS, but allowing any
 # origin lets other clients call the API directly from a browser. Tighten to
