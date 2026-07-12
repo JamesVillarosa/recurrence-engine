@@ -15,3 +15,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.4"
+      # Shared secret for POST /api/webhooks/restock-task. Set the real value in
+      # the Render dashboard (sync: false keeps it out of the repo). While unset,
+      # the webhook fails closed with 503 rather than running open.
+      - key: CADENCE_WEBHOOK_SECRET
+        sync: false
